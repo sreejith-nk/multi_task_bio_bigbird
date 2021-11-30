@@ -73,7 +73,9 @@ class SequenceClassificationTransformer(LightningModule):
 
     def step(self, batch: Dict[str, torch.tensor]):
         logits = self.forward(batch)
-        loss = self.loss_fn(logits, batch["labels"])
+        logits = logits.view(-1, self.hparams.num_labels)
+        labels = batch["labels"].view(-1)
+        loss = self.loss_fn(logits, labels)
         preds = torch.argmax(logits, dim=1)
         return loss, preds
 

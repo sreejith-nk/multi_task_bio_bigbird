@@ -12,4 +12,4 @@ resume_from_checkpoint: null
 weights_summary: "full"
 
 # number of validation steps to execute at the beginning of the training
-num_sanity_val_steps: 2
+num_sanity_val_steps: 1
