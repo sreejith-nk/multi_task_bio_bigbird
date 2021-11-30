@@ -1,0 +1,10 @@
+_target_: src.datamodules.mnli_datamodule.MNLIDataModule
+
+data_dir: ${data_dir} # data_dir is specified in config.yaml
+batch_size: 128
+max_length: 256
+num_workers: 8
+pin_memory: True
+
+# This is here for model to calculate total_train_steps for scheduler
+num_train_samples: 392702
