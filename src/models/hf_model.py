@@ -83,8 +83,8 @@ class SequenceClassificationTransformer(LightningModule):
         loss, preds = self.step(batch)
         # log train metrics
         acc = self.train_acc(preds, batch["labels"])
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("train/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/loss", loss, on_step=True, on_epoch=True, prog_bar=False)
+        self.log("train/acc", acc, on_step=True, on_epoch=True, prog_bar=True)
         # we can return here dict with any tensors
         # and then read it in some callback or in `training_epoch_end()`` below
         # remember to always return loss from `training_step()` or else backpropagation will fail!
@@ -99,7 +99,7 @@ class SequenceClassificationTransformer(LightningModule):
 
         # log val metrics
         acc = self.val_acc(preds, batch["labels"])
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True)
         self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
 
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
@@ -152,6 +152,7 @@ class SequenceClassificationTransformer(LightningModule):
                 "weight_decay": 0.0,
             },
         ]
+        print(f'{self.hparams.learning_rate =}')
         optimizer = AdamW(optimizer_grouped_parameters, lr=self.hparams.learning_rate, eps=self.hparams.adam_epsilon)
 
         scheduler = get_linear_schedule_with_warmup(
