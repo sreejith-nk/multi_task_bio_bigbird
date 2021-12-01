@@ -8,7 +8,7 @@ defaults:
   - override /trainer: default.yaml
   - override /model: bert_base_uncased.yaml
   - override /datamodule: hf_datamodule.yaml
-  - override /callbacks: none.yaml
+  - override /callbacks: lr_monitor.yaml
   - override /logger: tensorboard.yaml
 
 # all parameters below will be merged with parameters from default configurations set above
