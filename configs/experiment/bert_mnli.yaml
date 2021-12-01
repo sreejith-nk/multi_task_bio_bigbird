@@ -7,7 +7,7 @@ defaults:
   - override /mode: exp.yaml
   - override /trainer: default.yaml
   - override /model: bert_base_uncased.yaml
-  - override /datamodule: mnli_datamodule.yaml
+  - override /datamodule: hf_datamodule.yaml
   - override /callbacks: none.yaml
   - override /logger: null
 
