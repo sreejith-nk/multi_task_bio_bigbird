@@ -1,0 +1,7 @@
+_target_: src.models.hf_model2.SequenceClassificationTransformer
+
+huggingface_model: "bert-base-uncased"
+num_labels: 3
+learning_rate: 5e-5
+batch_size: ${datamodule.batch_size}
+num_train_samples: ${datamodule.num_train_samples}
