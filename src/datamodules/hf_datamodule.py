@@ -54,6 +54,13 @@ class HFDataModule(LightningDataModule):
         self.tokenizer = None
         self.collator_fn = None
 
+        self.eval_key = "validation"
+        self.test_key = "test"
+
+        if "mnli" in dataset_folder:
+            self.eval_key += "_matched"
+            self.test_key += "_matched"
+
     @property
     def num_classes(self) -> int:
         return 3
@@ -96,7 +103,7 @@ class HFDataModule(LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(
-            dataset=self.dataset["validation_matched"],
+            dataset=self.dataset[self.eval_key],
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
@@ -106,7 +113,7 @@ class HFDataModule(LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(
-            dataset=self.dataset["test_matched"],
+            dataset=self.dataset[self.test_key],
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,
             pin_memory=self.hparams.pin_memory,
