@@ -2,23 +2,30 @@ import argparse
 from pathlib import Path
 from torch._C import Argument
 import transformers
-from transformers import BertTokenizer
+from transformers import BertTokenizer, AutoTokenizer
 from datasets import load_dataset
 from datasets.dataset_dict import DatasetDict
 from argparse import ArgumentParser
+
 
 def main():
 
     transformers.logging.set_verbosity_error()
 
     parser = ArgumentParser()
+    parser.add_argument("which", type=str, choices=['snli', 'mnli'])
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--model_name", type=str, default="bert-base-uncased")
     parser.add_argument("--max_length", type=int, default=128)
     parser.add_argument("--num_procs", type=int, default=8)
     args = parser.parse_args()
 
-    dataset : DatasetDict = load_dataset("glue", "mnli")
-    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", use_fast=True)
+    if args.which == 'snli':
+        dataset : DatasetDict = load_dataset("snli")
+    else:
+        dataset : DatasetDict = load_dataset("glue", "mnli")
+
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
 
     def preprocess_function(examples: dict):
         sents = (examples["premise"], examples["hypothesis"])
@@ -32,7 +39,7 @@ def main():
     # dataset.set_format("torch")
     dataset.save_to_disk(args.output_dir)
 
-    print(f"Saved processed MNLI dataset into {args.output_dir} folder.")
+    print(f"Saved processed {args.which} dataset into {args.output_dir} folder.")
 
 if __name__ == "__main__":
     main()

@@ -1,3 +1,4 @@
+from argparse import ArgumentError
 from typing import Optional, Tuple
 
 import os
@@ -12,9 +13,11 @@ from transformers.models.auto.tokenization_auto import AutoTokenizer
 from transformers import DataCollatorWithPadding
 
 
-class MNLIDataModule(LightningDataModule):
+class HFDataModule(LightningDataModule):
     """
-    LightningDataModule for the MNLI task.
+    LightningDataModule for HF Datasets.
+    Requires a pre-processed (tokenized, cleaned...) dataset provided within the `data` folder.
+    Might require adjustments if your dataset doesn't follow the structure of SNLI or MNLI.
 
     A DataModule implements 5 key methods:
         - prepare_data (things to do on 1 GPU/TPU, not on every GPU/TPU in distributed mode)
@@ -33,6 +36,8 @@ class MNLIDataModule(LightningDataModule):
     def __init__(
         self,
         data_dir: str,
+        dataset_folder: str,
+        tokenizer_name: str,
         num_train_samples: int,  # Unused, see model's total_train_steps
         batch_size: int = 64,
         max_length: int = 128,
@@ -58,9 +63,10 @@ class MNLIDataModule(LightningDataModule):
         We should not assign anything here, so this function simply ensures
         that the pre-processed data is available.
         """
-        self.dataset_path = Path(self.hparams.data_dir) / "mnli-tokenized"
-        assert os.path.exists(self.dataset_path)
-        AutoTokenizer.from_pretrained("bert-base-uncased", use_fast=True)  # TODO: Load according to model-name
+        self.dataset_path = Path(self.hparams.data_dir) / self.hparams.dataset_folder
+        if not os.path.exists(self.dataset_path):
+            raise ArgumentError("The provided folder does not exist.")
+        AutoTokenizer.from_pretrained(self.hparams.tokenizer_name, use_fast=True)  # TODO: Load according to model-name
 
     def setup(self, stage: Optional[str] = None):
         """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
@@ -69,7 +75,7 @@ class MNLIDataModule(LightningDataModule):
 
         if not self.tokenizer:
             # TODO: Load according to model-name
-            self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", use_fast=True)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.hparams.tokenizer_name, use_fast=True)
 
         if not self.collator_fn:
             self.collator_fn = DataCollatorWithPadding(tokenizer=self.tokenizer)
