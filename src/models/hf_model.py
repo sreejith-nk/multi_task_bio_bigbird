@@ -1,12 +1,16 @@
+import inspect
 from typing import Any, Dict, List, Tuple
 
 import torch
-import inspect
 from pytorch_lightning import LightningModule
 from torch import nn
 from torchmetrics import MaxMetric
 from torchmetrics.classification.accuracy import Accuracy
-from transformers import AutoModel, AdamW, get_linear_schedule_with_warmup
+from transformers import AdamW, AutoModel, get_linear_schedule_with_warmup
+
+from src.utils import utils
+
+log = utils.get_logger(__name__)
 
 
 class SequenceClassificationTransformer(LightningModule):
@@ -28,7 +32,6 @@ class SequenceClassificationTransformer(LightningModule):
         self,
         huggingface_model: str,
         num_labels: int,
-        num_train_samples: int, # Need this until lightning updates issue #10760
         learning_rate: float = 2e-5,
         adam_epsilon: float = 1e-8,
         warmup_steps: int = 0,
@@ -44,7 +47,14 @@ class SequenceClassificationTransformer(LightningModule):
         # Load model and add classification head
         self.model = AutoModel.from_pretrained(huggingface_model)
         self.classifier = nn.Linear(self.model.config.hidden_size, num_labels)
-        self.dropout = nn.Dropout(self.model.config.hidden_dropout_prob)
+
+        # Init classifier weights according to initialization rules of model
+        self.model._init_weights(self.classifier)
+
+        # Apply dropout rate of model
+        dropout_prob = self.model.config.hidden_dropout_prob
+        log.info(f"Dropout probability of classifier set to {dropout_prob}.")
+        self.dropout = nn.Dropout(dropout_prob)
 
         # loss function (assuming single-label multi-class classification)
         self.loss_fn = torch.nn.CrossEntropyLoss()  # TODO: Make this customizable
@@ -64,7 +74,7 @@ class SequenceClassificationTransformer(LightningModule):
         self.forward_signature = params
 
     def forward(self, batch: Dict[str, torch.tensor]):
-        filtered_batch = {key : batch[key] for key in batch.keys() if key in self.forward_signature}
+        filtered_batch = {key: batch[key] for key in batch.keys() if key in self.forward_signature}
         outputs = self.model(**filtered_batch, return_dict=True)
         pooler = outputs.pooler_output
         pooler = self.dropout(pooler)
@@ -83,8 +93,8 @@ class SequenceClassificationTransformer(LightningModule):
         loss, preds = self.step(batch)
         # log train metrics
         acc = self.train_acc(preds, batch["labels"])
-        self.log("train/loss", loss, on_step=True, on_epoch=True, prog_bar=False)
-        self.log("train/acc", acc, on_step=True, on_epoch=True, prog_bar=True)
+        self.log("train/loss", loss, on_step=True, on_epoch=False, prog_bar=False)
+        self.log("train/acc", acc, on_step=True, on_epoch=False, prog_bar=True)
         # we can return here dict with any tensors
         # and then read it in some callback or in `training_epoch_end()`` below
         # remember to always return loss from `training_step()` or else backpropagation will fail!
@@ -99,8 +109,8 @@ class SequenceClassificationTransformer(LightningModule):
 
         # log val metrics
         acc = self.val_acc(preds, batch["labels"])
-        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
+        self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=False)
 
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
 
@@ -129,14 +139,27 @@ class SequenceClassificationTransformer(LightningModule):
         self.val_acc.reset()
 
     @property
-    def total_train_steps(self):
-        """Steps (including batches and multi-devices) until training is finished.
-        Needed for the scheduler. Lightning 1.5 removed self.train_dataloader so the usual way could
-        not be used anymore. Until they figure out a new way, we pass `num_train_samples` as param to model.
-        Watch issue [#10760](https://github.com/PyTorchLightning/pytorch-lightning/issues/10760 """
-        tb_size = self.hparams.batch_size * max(1, self.trainer.gpus)
-        ab_size = self.trainer.accumulate_grad_batches * float(self.trainer.max_epochs)
-        return (self.hparams.num_train_samples // tb_size) // ab_size
+    def total_training_steps(self) -> int:
+        """Total training steps inferred from datamodule and devices."""
+        if isinstance(self.trainer.limit_train_batches, int) and self.trainer.limit_train_batches != 0:
+            dataset_size = self.trainer.limit_train_batches
+        elif isinstance(self.trainer.limit_train_batches, float):
+            # limit_train_batches is a percentage of batches
+            dataset_size = len(self.trainer.datamodule.train_dataloader())
+            dataset_size = int(dataset_size * self.trainer.limit_train_batches)
+        else:
+            dataset_size = len(self.trainer.datamodule.train_dataloader())
+
+        num_devices = max(1, self.trainer.num_gpus, self.trainer.num_processes)
+        if self.trainer.tpu_cores:
+            num_devices = max(num_devices, self.trainer.tpu_cores)
+
+        effective_batch_size = self.trainer.accumulate_grad_batches * num_devices
+        max_estimated_steps = (dataset_size // effective_batch_size) * self.trainer.max_epochs
+
+        if self.trainer.max_steps and 0 < self.trainer.max_steps < max_estimated_steps:
+            return self.trainer.max_steps
+        return max_estimated_steps
 
     def configure_optimizers(self):
         """Prepare optimizer and schedule (linear warmup and decay)"""
@@ -152,13 +175,13 @@ class SequenceClassificationTransformer(LightningModule):
                 "weight_decay": 0.0,
             },
         ]
-        print(f'{self.hparams.learning_rate =}')
+        print(f"{self.hparams.learning_rate =}")
         optimizer = AdamW(optimizer_grouped_parameters, lr=self.hparams.learning_rate, eps=self.hparams.adam_epsilon)
 
         scheduler = get_linear_schedule_with_warmup(
             optimizer,
             num_warmup_steps=self.hparams.warmup_steps,
-            num_training_steps=self.total_train_steps,
+            num_training_steps=self.total_training_steps,
         )
         scheduler = {"scheduler": scheduler, "interval": "step", "frequency": 1}
         return [optimizer], [scheduler]

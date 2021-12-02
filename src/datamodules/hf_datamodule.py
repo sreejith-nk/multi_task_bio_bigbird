@@ -38,7 +38,6 @@ class HFDataModule(LightningDataModule):
         data_dir: str,
         dataset_folder: str,
         tokenizer_name: str,
-        num_train_samples: int,  # Unused, see model's total_train_steps
         batch_size: int = 64,
         max_length: int = 128,
         num_workers: int = 0,
