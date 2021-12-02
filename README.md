@@ -22,6 +22,8 @@ This template is a fork of the fantastic [lightning-hydra-template](https://gith
 
 This template is very similar to the work done by the Lightning team in [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers), with the difference being that the template in this repository is simple, lightweight and very close to the original and beloved lightning-hydra-template mentioned above. It can be useful to reference [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers) when implementing some comlpex usecase, but I personally found it useful to keep things simple, hence why I use this template instead of [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers).
 
+The original readme is kept below for reference.
+
 ## 📌&nbsp;&nbsp;Introduction
 
 This template tries to be as general as possible - you can easily delete any unwanted features from the pipeline or rewire the configuration, by modifying behavior in [src/train.py](src/train.py).
