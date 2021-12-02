@@ -1,3 +1,7 @@
+# Working folders (remove if you want to publish them!)
+tensorboard
+logs 
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

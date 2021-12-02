@@ -7,7 +7,7 @@ defaults:
   - model: mnist_model.yaml
   - datamodule: mnist_datamodule.yaml
   - callbacks: default.yaml
-  - logger: null # set logger here or use command line (e.g. `python run.py logger=wandb`)
+  - logger: tensorboard.yaml
 
   - mode: default.yaml
 
@@ -46,3 +46,6 @@ seed: null
 # name of the run is accessed by loggers
 # should be used along with experiment mode
 name: null
+
+# version name is datetime
+version: ${now:%Y-%m-%d_%H-%M-%S}
