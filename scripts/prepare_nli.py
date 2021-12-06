@@ -13,7 +13,7 @@ def main():
     transformers.logging.set_verbosity_error()
 
     parser = ArgumentParser()
-    parser.add_argument("which", type=str, choices=['snli', 'mnli'])
+    parser.add_argument("which", type=str, choices=['snli', 'mnli', 'hans'])
     parser.add_argument("output_dir", type=Path)
     parser.add_argument("--model_name", type=str, default="bert-base-uncased")
     parser.add_argument("--max_length", type=int, default=128)
@@ -22,8 +22,10 @@ def main():
 
     if args.which == 'snli':
         dataset : DatasetDict = load_dataset("snli")
-    else:
+    elif args.which == 'mnli':
         dataset : DatasetDict = load_dataset("glue", "mnli")
+    else:
+        dataset : DatasetDict = load_dataset("hans")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
 
@@ -35,7 +37,7 @@ def main():
     dataset = dataset.map(preprocess_function, batched=True, num_proc=args.num_procs)
     dataset = dataset.filter(lambda sample: sample["label"] != -1)
     dataset = dataset.rename_column("label", "labels")
-    dataset = dataset.remove_columns(["premise", "hypothesis"])
+    # dataset = dataset.remove_columns(["premise", "hypothesis"])
     # dataset.set_format("torch")
     dataset.save_to_disk(args.output_dir)
 

@@ -36,7 +36,7 @@ class HFDataModule(LightningDataModule):
     def __init__(
         self,
         data_dir: str,
-        dataset_folder: str,
+        dataset_name: str,
         tokenizer_name: str,
         batch_size: int = 64,
         max_length: int = 128,
@@ -56,9 +56,19 @@ class HFDataModule(LightningDataModule):
         self.eval_key = "validation"
         self.test_key = "test"
 
-        if "mnli" in dataset_folder:
+        if "mnli" in dataset_name:
             self.eval_key += "_matched"
             self.test_key += "_matched"
+
+        self.keep_columns=[
+            "idx",
+            "input_ids",
+            "attention_mask",
+            "token_type_ids",
+            "labels",
+            "bias",
+            "teacher_probs",
+        ]
 
     @property
     def num_classes(self) -> int:
@@ -69,9 +79,9 @@ class HFDataModule(LightningDataModule):
         We should not assign anything here, so this function simply ensures
         that the pre-processed data is available.
         """
-        self.dataset_path = Path(self.hparams.data_dir) / self.hparams.dataset_folder
+        self.dataset_path = Path(self.hparams.data_dir) / self.hparams.dataset_name
         if not os.path.exists(self.dataset_path):
-            raise ArgumentError("The provided folder does not exist.")
+            raise ValueError("The provided folder does not exist.")
         AutoTokenizer.from_pretrained(self.hparams.tokenizer_name, use_fast=True)  # TODO: Load according to model-name
 
     def setup(self, stage: Optional[str] = None):
@@ -88,7 +98,8 @@ class HFDataModule(LightningDataModule):
 
         if not self.dataset:
             self.dataset = datasets.load_from_disk(self.dataset_path)
-            self.dataset.set_format("torch")
+            keep_columns = [column for column in self.keep_columns if column in self.dataset['train'].column_names]
+            self.dataset.set_format("torch", columns=keep_columns)
 
     def train_dataloader(self):
         return DataLoader(
