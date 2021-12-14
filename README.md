@@ -20,9 +20,9 @@ Click on [<kbd>Use this template</kbd>](https://github.com/ashleve/lightning-hyd
 ## Fork Explanation
 This template is a fork of the fantastic [lightning-hydra-template](https://github.com/ashleve/lightning-hydra-template), modified to work smoothly with Huggingface Transformers and Huggingface Datasets. It contains an example of how to train Bert on the MNLI text classification task.
 
-This template is very similar to the work done by the Lightning team in [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers), with the difference being that the template in this repository is simple, lightweight and very close to the original and beloved lightning-hydra-template mentioned above. It can be useful to reference [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers) when implementing some comlpex usecase, but I personally found it useful to keep things simple, hence why I use this template instead of [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers).
+This template is very similar to the work done by the Lightning team in [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers), with the difference being that the template in this repository is simple, lightweight and very close to the original and beloved lightning-hydra-template mentioned above. It can be useful to reference [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers) when implementing some complex usecase, but I personally found it useful to keep things simple, hence why I use this template instead of [lightning-transformers](https://github.com/PyTorchLightning/lightning-transformers).
 
-The original readme is kept below for reference.
+The original README is kept below for reference.
 
 ## 📌&nbsp;&nbsp;Introduction
 
