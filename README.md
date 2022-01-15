@@ -15,8 +15,6 @@ Click on [<kbd>Use this template</kbd>](https://github.com/mariomeissner/lightni
 
 </div>
 
-<br><br>
-
 ## About this Template
 This template is a fork of the fantastic [lightning-hydra-template](https://github.com/ashleve/lightning-hydra-template), modified to work smoothly with Huggingface Transformers and Huggingface Datasets. It contains an example of how to train Bert on the MNLI text classification task.
 
