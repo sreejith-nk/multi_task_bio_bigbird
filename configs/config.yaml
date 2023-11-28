@@ -4,10 +4,10 @@
 defaults:
   - _self_
   - trainer: default.yaml
-  - model: mnist_model.yaml
-  - datamodule: mnist_datamodule.yaml
+  - model: bert_base_uncased.yaml
+  - datamodule: hf_datamodule.yaml
   - callbacks: default.yaml
-  - logger: tensorboard.yaml
+  - logger: wandb.yaml
 
   - mode: default.yaml
 

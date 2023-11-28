@@ -16,7 +16,7 @@ from transformers import DataCollatorForTokenClassification
 def get_entity_id(data_name):
     if data_name in ["NCBI-disease", "BC5CDR-disease", "mirna-di", "ncbi_disease", "scai_disease", "variome-di"]:
         entity_id = 1
-    elif data_name in ["BC5CDR-chem",  "cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD"]:
+    elif data_name in ["BC5CDR-chem",  "cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner"]:
         entity_id = 2
     elif data_name in ["BC2GM", "JNLPBA-protein", "bc2gm","bc2gm_corpus","mirna-gp", "cell_finder-gp", "chebi-gp", "loctext-gp", "deca", "fsu", "gpro", "jnlpba-gp", "bio_infer-gp", "variome-gp", "osiris-gp",  "iepa"]:
         entity_id = 3
@@ -57,7 +57,6 @@ class HFDataModule(LightningDataModule):
 
     def __init__(
         self,
-        data_dir: str,
         dataset_name: str,
         hf_token:str,
         tokenizer_name: str,
