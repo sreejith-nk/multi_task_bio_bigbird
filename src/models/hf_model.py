@@ -7,13 +7,46 @@ from torch import nn
 from torchmetrics import MaxMetric
 from torchmetrics.classification.accuracy import Accuracy
 from transformers import AdamW, AutoModel, get_linear_schedule_with_warmup
+import torch.nn.functional as F
 
 from src.utils import utils
 
 log = utils.get_logger(__name__)
 
+def match_indexes(entity_id):
+    dise_idx = []
+    chem_idx = []
+    gene_idx = []
+    spec_idx = []
+    cellline_idx = []
+    dna_idx = []
+    rna_idx = []
+    celltype_idx = []
 
-class SequenceClassificationTransformer(LightningModule):
+    for i, example in enumerate(entity_id):
+        if example[0] == 1:
+            dise_idx.append(i)
+        elif example[0] == 2:
+            chem_idx.append(i)
+        elif example[0] == 3:
+            gene_idx.append(i)
+        elif example[0] == 4:
+            spec_idx.append(i)
+        elif example[0] == 5:
+            cellline_idx.append(i)
+        elif example[0] == 6:
+            dna_idx.append(i)
+        elif example[0] == 7:
+            rna_idx.append(i)
+        elif example[0] == 8:
+            celltype_idx.append(i)
+        else:
+            # Handle other cases if needed
+            pass
+    return dise_idx, chem_idx, gene_idx, spec_idx, cellline_idx, dna_idx, rna_idx, celltype_idx
+
+
+class Bigbird_multitask(LightningModule):
     """
     Transformer Model for Sequence Classification.
 
@@ -32,6 +65,7 @@ class SequenceClassificationTransformer(LightningModule):
         self,
         huggingface_model: str,
         num_labels: int,
+        hf_token: str,
         learning_rate: float = 2e-5,
         adam_epsilon: float = 1e-8,
         warmup_steps: int = 0,
@@ -45,11 +79,32 @@ class SequenceClassificationTransformer(LightningModule):
         self.save_hyperparameters(logger=False)
 
         # Load model and add classification head
-        self.model = AutoModel.from_pretrained(huggingface_model)
-        self.classifier = nn.Linear(self.model.config.hidden_size, num_labels)
+        self.model = AutoModel.from_pretrained(self.hparams.huggingface_model,
+                                               token=self.hparams.hf_token)
+
+        self.dise_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # disease
+        self.chem_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # chemical
+        self.gene_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # gene/protein
+        self.spec_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # species
+        self.cellline_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # cell line
+        self.dna_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # dna
+        self.rna_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # rna
+        # self.protein_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # protein
+        self.celltype_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # cell type
 
         # Init classifier weights according to initialization rules of model
-        self.model._init_weights(self.classifier)
+        classifiers=[self.dise_classifier,
+            self.chem_classifier,
+            self.gene_classifier,
+            self.spec_classifier,
+            self.cellline_classifier,
+            self.dna_classifier,
+            self.rna_classifier,
+            # self.protein_classifier,
+            self.celltype_classifier]
+
+        for classifier in classifiers:
+            self.model._init_weights(classifier)
 
         # Apply dropout rate of model
         dropout_prob = self.model.config.hidden_dropout_prob
@@ -61,9 +116,12 @@ class SequenceClassificationTransformer(LightningModule):
 
         # use separate metric instance for train, val and test step
         # to ensure a proper reduction over the epoch
-        self.train_acc = Accuracy()
-        self.val_acc = Accuracy()
-        self.test_acc = Accuracy()
+        self.train_acc = Accuracy(task='multiclass',
+                                     num_classes=self.hparams.num_labels)
+        self.val_acc = Accuracy(task='multiclass',
+                                     num_classes=self.hparams.num_labels)
+        self.test_acc = Accuracy(task='multiclass',
+                                     num_classes=self.hparams.num_labels)
 
         # for logging best so far validation accuracy
         self.val_acc_best = MaxMetric()
@@ -76,18 +134,53 @@ class SequenceClassificationTransformer(LightningModule):
     def forward(self, batch: Dict[str, torch.tensor]):
         filtered_batch = {key: batch[key] for key in batch.keys() if key in self.forward_signature}
         outputs = self.model(**filtered_batch, return_dict=True)
-        pooler = outputs.pooler_output
-        pooler = self.dropout(pooler)
-        logits = self.classifier(pooler)
-        return logits
+        outputs = outputs.last_hidden_state
+
+        dise_logits = self.dise_classifier(outputs) # disease logit value
+        chem_logits = self.chem_classifier(outputs) # chemical logit value
+        gene_logits = self.gene_classifier(outputs) # gene/protein logit value
+        spec_logits = self.spec_classifier(outputs) # species logit value
+        cellline_logits = self.cellline_classifier(outputs) # cell line logit value
+        dna_logits = self.dna_classifier(outputs) # dna logit value
+        rna_logits = self.rna_classifier(outputs) # rna logit value
+        # protein_logits = self.protein_classifier(outputs) # protein logit value
+        celltype_logits = self.celltype_classifier(outputs) # cell type logit value
+
+        # pooler = outputs.pooler_output
+        # pooler = self.dropout(pooler)
+        # logits = self.classifier(pooler)
+        return dise_logits, chem_logits, gene_logits, spec_logits, cellline_logits, dna_logits, rna_logits, celltype_logits
 
     def step(self, batch: Dict[str, torch.tensor]):
         logits = self(batch)
-        logits = logits.view(-1, self.hparams.num_labels)
-        labels = batch["labels"].view(-1)
-        loss = self.loss_fn(logits, labels)
-        preds = torch.argmax(logits, dim=1)
-        return loss, preds
+        indexes = match_indexes(batch['entity_id'])
+
+        overall_loss=0.0
+        overall_preds=torch.zeros([batch['entity_id'].shape[0],batch['entity_id'].shape[1]])
+        print(overall_preds.shape)
+
+
+        for i,task_idx in enumerate(indexes):
+            if len(task_idx) > 0:
+                labels = batch.get('labels')[task_idx].view(-1)
+                preds = logits[i][task_idx].view(-1, self.hparams.num_labels)  # Replace 'logits' with the appropriate variable
+
+                overall_preds[task_idx]=torch.argmax(logits[i][task_idx], dim=2).to(torch.float32)
+
+                # Calculate loss for the current category using a specified loss function
+                task_loss = self.loss_fn(preds, labels)
+                overall_loss += task_loss
+
+
+
+        return overall_loss,overall_preds.view(-1)
+
+
+        # logits = logits.view(-1, self.hparams.num_labels)
+        # labels = batch["labels"].view(-1)
+        # loss = self.loss_fn(logits, labels)
+        # preds = torch.argmax(logits, dim=1)
+        # return loss, preds
 
     def training_step(self, batch: Dict[str, torch.tensor], batch_idx: int):
         loss, preds = self.step(batch)
