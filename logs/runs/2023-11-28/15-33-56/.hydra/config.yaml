@@ -1,0 +1,67 @@
+work_dir: ${hydra:runtime.cwd}
+data_dir: ${work_dir}/data/
+print_config: true
+ignore_warnings: true
+test_after_training: true
+seed: null
+name: null
+version: ${now:%Y-%m-%d_%H-%M-%S}
+trainer:
+  _target_: pytorch_lightning.Trainer
+  gpus: 0
+  precision: 32
+  min_epochs: 1
+  max_epochs: 3
+  val_check_interval: 0.5
+  progress_bar_refresh_rate: 5
+  resume_from_checkpoint: null
+  num_sanity_val_steps: 1
+model:
+  _target_: src.models.hf_model.Bigbird_multitask
+  num_labels: 3
+  huggingface_model: bisectgroup/biobigbird-base-stage1
+  hf_token: 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
+  learning_rate: 3.0e-05
+  batch_size: ${datamodule.batch_size}
+datamodule:
+  _target_: src.datamodules.hf_datamodule.HFDataModule
+  dataset_name: ncbi_disease,drAbreu/bc4chemd_ner,bc2gm_corpus,linnaeus
+  tokenizer_name: ${model.huggingface_model}
+  hf_token: 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
+  max_length: 128
+  batch_size: 32
+  num_workers: 8
+  pin_memory: true
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: val/acc
+    mode: max
+    save_top_k: 0
+    save_last: true
+    verbose: false
+    dirpath: checkpoints/
+    filename: epoch_{epoch:03d}
+    auto_insert_metric_name: false
+  model_summary:
+    _target_: pytorch_lightning.callbacks.ModelSummary
+    max_depth: 1
+  rich_progress_bar:
+    _target_: pytorch_lightning.callbacks.RichProgressBar
+  lr_monitor:
+    _target_: pytorch_lightning.callbacks.LearningRateMonitor
+    logging_interval: step
+logger:
+  wandb:
+    _target_: pytorch_lightning.loggers.wandb.WandbLogger
+    project: template-tests
+    name: ${name}
+    save_dir: .
+    offline: false
+    id: null
+    log_model: false
+    prefix: ''
+    job_type: train
+    group: ''
+    tags: []
+default_mode: true
