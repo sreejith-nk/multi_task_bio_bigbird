@@ -80,7 +80,7 @@ class Bigbird_multitask(LightningModule):
 
         # Load model and add classification head
         self.model = AutoModel.from_pretrained(self.hparams.huggingface_model,
-                                               token=self.hparams.hf_token)
+                                               use_auth_token=self.hparams.hf_token)
 
         self.dise_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # disease
         self.chem_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # chemical
@@ -193,9 +193,9 @@ class Bigbird_multitask(LightningModule):
         # remember to always return loss from `training_step()` or else backpropagation will fail!
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
 
-    def training_epoch_end(self, outputs: List[Any]):
+    def on_train_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
-        pass
+        self.train_acc.reset()
 
     def validation_step(self, batch: Dict[str, torch.tensor], batch_idx: int):
         loss, preds = self.step(batch)
@@ -207,10 +207,11 @@ class Bigbird_multitask(LightningModule):
 
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
 
-    def validation_epoch_end(self, outputs: List[Any]):
+    def on_validation_epoch_end(self, outputs: List[Any]):
         acc = self.val_acc.compute()  # get val accuracy from current epoch
         self.val_acc_best.update(acc)
         self.log("val/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
+        self.val_acc.reset()
 
     def test_step(self, batch: Dict[str, torch.tensor], batch_idx: int):
         loss, preds = self.step(batch)
@@ -222,14 +223,8 @@ class Bigbird_multitask(LightningModule):
 
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
 
-    def test_epoch_end(self, outputs: List[Any]):
-        pass
-
-    def on_epoch_end(self):
-        # reset metrics at the end of every epoch!
-        self.train_acc.reset()
+    def on_test_epoch_end(self, outputs: List[Any]):
         self.test_acc.reset()
-        self.val_acc.reset()
 
     @property
     def total_training_steps(self) -> int:

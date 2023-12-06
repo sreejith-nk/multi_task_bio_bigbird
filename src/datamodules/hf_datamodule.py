@@ -16,7 +16,7 @@ from transformers import DataCollatorForTokenClassification
 def get_entity_id(data_name):
     if data_name in ["NCBI-disease", "BC5CDR-disease", "mirna-di", "ncbi_disease", "scai_disease", "variome-di"]:
         entity_id = 1
-    elif data_name in ["BC5CDR-chem",  "cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner"]:
+    elif data_name in ["BC5CDR-chem",  "cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner","bc4chemd_ner"]:
         entity_id = 2
     elif data_name in ["BC2GM", "JNLPBA-protein", "bc2gm","bc2gm_corpus","mirna-gp", "cell_finder-gp", "chebi-gp", "loctext-gp", "deca", "fsu", "gpro", "jnlpba-gp", "bio_infer-gp", "variome-gp", "osiris-gp",  "iepa"]:
         entity_id = 3
@@ -58,6 +58,7 @@ class HFDataModule(LightningDataModule):
     def __init__(
         self,
         dataset_name: str,
+        data_dir:str,
         hf_token:str,
         tokenizer_name: str,
         batch_size: int = 64,
@@ -108,7 +109,7 @@ class HFDataModule(LightningDataModule):
 
         AutoTokenizer.from_pretrained(self.hparams.tokenizer_name,
                                       use_fast=True,
-                                      token=self.hparams.hf_token)  # TODO: Load according to model-name
+                                      use_auth_token=self.hparams.hf_token)  # TODO: Load according to model-name
 
     def setup(self, stage: Optional[str] = None):
         """Load data. Set variables: `self.data_train`, `self.data_val`, `self.data_test`.
@@ -119,7 +120,7 @@ class HFDataModule(LightningDataModule):
             # TODO: Load according to model-name
             self.tokenizer = AutoTokenizer.from_pretrained(self.hparams.tokenizer_name,
                                                            use_fast=True,
-                                                           token=self.hparams.hf_token)
+                                                           use_auth_token=self.hparams.hf_token)
 
         if not self.collator_fn:
             self.collator_fn = DataCollatorForTokenClassification(tokenizer=self.tokenizer,
@@ -134,22 +135,26 @@ class HFDataModule(LightningDataModule):
       data_names=self.hparams.dataset_name.split(',')
       final_datasets=[]
       for name in data_names:
-        dataset=datasets.load_dataset(name)
+        dataset=datasets.load_from_disk(os.path.join(self.hparams.data_dir,name))
         tokenized_dataset=dataset.map(self.tokenize_and_align_labels,
-                                  batched=True,
-                                  remove_columns=dataset["train"].column_names
-                                  )
+                                    batched=True,
+                                    remove_columns=dataset["train"].column_names
+                                    )
         #adding entity
         entity_id=get_entity_id(name)
 
         # Add the new column to each split (train, validation, test)
-        new_column_values=[2,2]
+        
         for split in tokenized_dataset.keys():
-          entity_values = [[entity_id]*self.hparams.max_length for _ in range(len(tokenized_dataset[split]))]
-          tokenized_dataset[split] = tokenized_dataset[split].add_column('entity_id', entity_values)
+            entity_values = [[entity_id]*self.hparams.max_length for _ in range(len(tokenized_dataset[split]))]
+            tokenized_dataset[split] = tokenized_dataset[split].add_column('entity_id', entity_values)
 
         final_datasets.append(tokenized_dataset)
-
+      
+      for dataset in final_datasets:
+        print("\n")
+        for split in ['train','validation','test']:
+            print(dataset[split].features.keys(),end="\n")
       combined_dataset_dict = datasets.DatasetDict({split: datasets.concatenate_datasets([dataset_dict[split] for dataset_dict in final_datasets])
       for split in final_datasets[0].keys()
       })

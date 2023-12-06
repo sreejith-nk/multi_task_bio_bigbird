@@ -5,3 +5,4 @@ huggingface_model: "bisectgroup/biobigbird-base-stage1"
 hf_token: "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"
 learning_rate: 3e-5
 batch_size: ${datamodule.batch_size}
+
