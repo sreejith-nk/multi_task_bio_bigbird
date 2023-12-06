@@ -1,0 +1,68 @@
+{
+  "builder_name": "linnaeus",
+  "citation": "@article{gerner2010linnaeus,\n         title={LINNAEUS: a species name identification system for biomedical literature},\n         author={Gerner, Martin and Nenadic, Goran and Bergman, Casey M},\n         journal={BMC bioinformatics},\n         volume={11},\n         number={1},\n         pages={85},\n         year={2010},\n         publisher={Springer}\n}\n",
+  "config_name": "linnaeus",
+  "dataset_name": "linnaeus",
+  "dataset_size": 9162459,
+  "description": "A novel corpus of full-text documents manually annotated for species mentions.\n",
+  "download_checksums": {
+    "data/linnaeus.zip": {
+      "num_bytes": 972920,
+      "checksum": null
+    }
+  },
+  "download_size": 972920,
+  "features": {
+    "id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "tokens": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "ner_tags": {
+      "feature": {
+        "names": [
+          "O",
+          "B",
+          "I"
+        ],
+        "_type": "ClassLabel"
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "http://linnaeus.sourceforge.net/",
+  "license": "",
+  "size_in_bytes": 10135379,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 4771230,
+      "num_examples": 11936,
+      "dataset_name": "linnaeus"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 1592308,
+      "num_examples": 4079,
+      "dataset_name": "linnaeus"
+    },
+    "test": {
+      "name": "test",
+      "num_bytes": 2798921,
+      "num_examples": 7143,
+      "dataset_name": "linnaeus"
+    }
+  },
+  "version": {
+    "version_str": "1.0.0",
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "builder_name": "bc4chemd_ner",
+  "citation": "@article{Krallinger2015TheCC,\n  title={The CHEMDNER corpus of chemicals and drugs and its annotation principles},\n  author={Martin Krallinger and Obdulia Rabal and Florian Leitner and Miguel Vazquez and David Salgado and Zhiyong Lu and Robert Leaman and Yanan Lu and Dong-Hong Ji and Daniel M. Lowe and Roger A. Sayle and Riza Theresa Batista-Navarro and Rafal Rak and Torsten Huber and Tim Rockt{\"a}schel and S{'e}rgio Matos and David Campos and Buzhou Tang and Hua Xu and Tsendsuren Munkhdalai and Keun Ho Ryu and S. V. Ramanan and P. Senthil Nathan and Slavko Zitnik and Marko Bajec and Lutz Weber and Matthias Irmer and Saber Ahmad Akhondi and Jan A. Kors and Shuo Xu and Xin An and Utpal Kumar Sikdar and Asif Ekbal and Masaharu Yoshioka and Thaer M. Dieb and Miji Choi and Karin M. Verspoor and Madian Khabsa and C. Lee Giles and Hongfang Liu and K. E. Ravikumar and Andre Lamurias and Francisco M. Couto and Hong-Jie Dai and Richard Tzong-Han Tsai and C Ata and Tolga Can and Anabel Usie and Rui Alves and Isabel Segura-Bedmar and Paloma Mart{'i}nez and Julen Oyarz{'a}bal and Alfonso Valencia},\n  journal={Journal of Cheminformatics},\n  year={2015},\n  volume={7},\n  pages={S2 - S2}\n}",
+  "config_name": "bc4chemd",
+  "dataset_name": "bc4chemd_ner",
+  "dataset_size": 44011047,
+  "description": "The automatic extraction of chemical information from text requires the recognition of chemical entity mentions as one of its key steps. When developing supervised named entity recognition (NER) systems, the availability of a large, manually annotated text corpus is desirable. Furthermore, large corpora permit the robust evaluation and comparison of different approaches that detect chemicals in documents. We present the CHEMDNER corpus, a collection of 10,000 PubMed abstracts that contain a total of 84,355 chemical entity mentions labeled manually by expert chemistry literature curators, following annotation guidelines specifically defined for this task. The abstracts of the CHEMDNER corpus were selected to be representative for all major chemical disciplines. Each of the chemical entity mentions was manually labeled according to its structure-associated chemical entity mention (SACEM) class: abbreviation, family, formula, identifier, multiple, systematic and trivial. The difficulty and consistency of tagging chemicals in text was measured using an agreement study between annotators, obtaining a percentage agreement of 91. For a subset of the CHEMDNER corpus (the test set of 3,000 abstracts) we provide not only the Gold Standard manual annotations, but also mentions automatically detected by the 26 teams that participated in the BioCreative IV CHEMDNER chemical mention recognition task. In addition, we release the CHEMDNER silver standard corpus of automatically extracted mentions from 17,000 randomly selected PubMed abstracts. A version of the CHEMDNER corpus in the BioC format has been generated as well. We propose a standard for required minimum information about entity annotations for the construction of domain specific corpora on chemical and drug entities. The CHEMDNER corpus and annotation guidelines are available at: http://www.biocreative.org/resources/biocreative-iv/chemdner-corpus/",
+  "download_checksums": {
+    "https://github.com/cambridgeltl/MTL-Bioinformatics-2016/raw/master/data/BC4CHEMD/train.tsv": {
+      "num_bytes": 7503034,
+      "checksum": null
+    },
+    "https://github.com/cambridgeltl/MTL-Bioinformatics-2016/raw/master/data/BC4CHEMD/devel.tsv": {
+      "num_bytes": 7462540,
+      "checksum": null
+    },
+    "https://github.com/cambridgeltl/MTL-Bioinformatics-2016/raw/master/data/BC4CHEMD/test.tsv": {
+      "num_bytes": 6436467,
+      "checksum": null
+    }
+  },
+  "download_size": 21402041,
+  "features": {
+    "id": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "tokens": {
+      "feature": {
+        "dtype": "string",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "ner_tags": {
+      "feature": {
+        "names": [
+          "O",
+          "B-Chemical",
+          "I-Chemical"
+        ],
+        "_type": "ClassLabel"
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "http://www.biocreative.org/resources/biocreative-iv/chemdner-corpus/",
+  "license": "",
+  "size_in_bytes": 65413088,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 15423387,
+      "num_examples": 30683,
+      "dataset_name": "bc4chemd_ner"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 15339923,
+      "num_examples": 30640,
+      "dataset_name": "bc4chemd_ner"
+    },
+    "test": {
+      "name": "test",
+      "num_bytes": 13247737,
+      "num_examples": 26365,
+      "dataset_name": "bc4chemd_ner"
+    }
+  },
+  "version": {
+    "version_str": "1.0.0",
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  }
+}
