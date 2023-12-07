@@ -117,11 +117,11 @@ class Bigbird_multitask(LightningModule):
         # use separate metric instance for train, val and test step
         # to ensure a proper reduction over the epoch
         self.train_acc = Accuracy(task='multiclass',
-                                     num_classes=self.hparams.num_labels)
+                                     num_classes=self.hparams.num_labels+1,ignore_index=-100)
         self.val_acc = Accuracy(task='multiclass',
-                                     num_classes=self.hparams.num_labels)
+                                     num_classes=self.hparams.num_labels+1,ignore_index=-100)
         self.test_acc = Accuracy(task='multiclass',
-                                     num_classes=self.hparams.num_labels)
+                                     num_classes=self.hparams.num_labels+1,ignore_index=-100)
 
         # for logging best so far validation accuracy
         self.val_acc_best = MaxMetric()
@@ -156,16 +156,14 @@ class Bigbird_multitask(LightningModule):
         indexes = match_indexes(batch['entity_id'])
 
         overall_loss=0.0
-        overall_preds=torch.zeros([batch['entity_id'].shape[0],batch['entity_id'].shape[1]])
-        print(overall_preds.shape)
-
+        overall_preds=torch.zeros([batch['entity_id'].shape[0],batch['entity_id'].shape[1]]).to(logits[0].device)
 
         for i,task_idx in enumerate(indexes):
             if len(task_idx) > 0:
                 labels = batch.get('labels')[task_idx].view(-1)
                 preds = logits[i][task_idx].view(-1, self.hparams.num_labels)  # Replace 'logits' with the appropriate variable
 
-                overall_preds[task_idx]=torch.argmax(logits[i][task_idx], dim=2).to(torch.float32)
+                overall_preds[task_idx]=torch.argmax(logits[i][task_idx], dim=2).to(torch.float32).to(logits[i][task_idx].device)
 
                 # Calculate loss for the current category using a specified loss function
                 task_loss = self.loss_fn(preds, labels)
@@ -185,7 +183,7 @@ class Bigbird_multitask(LightningModule):
     def training_step(self, batch: Dict[str, torch.tensor], batch_idx: int):
         loss, preds = self.step(batch)
         # log train metrics
-        acc = self.train_acc(preds, batch["labels"])
+        acc = self.train_acc(preds, batch["labels"].view(-1))
         self.log("train/loss", loss, on_step=True, on_epoch=False, prog_bar=False)
         self.log("train/acc", acc, on_step=True, on_epoch=False, prog_bar=True)
         # we can return here dict with any tensors
@@ -193,21 +191,22 @@ class Bigbird_multitask(LightningModule):
         # remember to always return loss from `training_step()` or else backpropagation will fail!
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
 
-    def on_train_epoch_end(self, outputs: List[Any]):
+    def on_train_epoch_end(self):
         # `outputs` is a list of dicts returned from `training_step()`
         self.train_acc.reset()
 
     def validation_step(self, batch: Dict[str, torch.tensor], batch_idx: int):
+
         loss, preds = self.step(batch)
 
         # log val metrics
-        acc = self.val_acc(preds, batch["labels"])
+        acc = self.val_acc(preds, batch["labels"].view(-1))
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
         self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=False)
 
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
 
-    def on_validation_epoch_end(self, outputs: List[Any]):
+    def on_validation_epoch_end(self):
         acc = self.val_acc.compute()  # get val accuracy from current epoch
         self.val_acc_best.update(acc)
         self.log("val/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
@@ -217,17 +216,18 @@ class Bigbird_multitask(LightningModule):
         loss, preds = self.step(batch)
 
         # log test metrics
-        acc = self.test_acc(preds, batch["labels"])
+        acc = self.test_acc(preds, batch["labels"].view(-1))
         self.log("test/loss", loss, on_step=False, on_epoch=True)
         self.log("test/acc", acc, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
 
-    def on_test_epoch_end(self, outputs: List[Any]):
+    def on_test_epoch_end(self):
         self.test_acc.reset()
 
-    @property
+    """@property"""
     def total_training_steps(self) -> int:
+        print(dir(self.trainer))
         """Total training steps inferred from datamodule and devices."""
         if isinstance(self.trainer.limit_train_batches, int) and self.trainer.limit_train_batches != 0:
             dataset_size = self.trainer.limit_train_batches
@@ -237,10 +237,8 @@ class Bigbird_multitask(LightningModule):
             dataset_size = int(dataset_size * self.trainer.limit_train_batches)
         else:
             dataset_size = len(self.trainer.datamodule.train_dataloader())
-
-        num_devices = max(1, self.trainer.num_gpus, self.trainer.num_processes)
-        if self.trainer.tpu_cores:
-            num_devices = max(num_devices, self.trainer.tpu_cores)
+       
+        num_devices = max(1, self.trainer.num_devices)
 
         effective_batch_size = self.trainer.accumulate_grad_batches * num_devices
         max_estimated_steps = (dataset_size // effective_batch_size) * self.trainer.max_epochs
@@ -269,7 +267,7 @@ class Bigbird_multitask(LightningModule):
         scheduler = get_linear_schedule_with_warmup(
             optimizer,
             num_warmup_steps=self.hparams.warmup_steps,
-            num_training_steps=self.total_training_steps,
+            num_training_steps=self.total_training_steps(),
         )
         scheduler = {"scheduler": scheduler, "interval": "step", "frequency": 1}
         return [optimizer], [scheduler]

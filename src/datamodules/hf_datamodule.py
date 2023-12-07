@@ -120,12 +120,16 @@ class HFDataModule(LightningDataModule):
             # TODO: Load according to model-name
             self.tokenizer = AutoTokenizer.from_pretrained(self.hparams.tokenizer_name,
                                                            use_fast=True,
-                                                           use_auth_token=self.hparams.hf_token)
+                                                           use_auth_token=self.hparams.hf_token,
+                                                           padding='max_length',
+                                                           truncation=True,
+                                                           max_length=self.hparams.max_length)
 
         if not self.collator_fn:
             self.collator_fn = DataCollatorForTokenClassification(tokenizer=self.tokenizer,
                                                                   padding='max_length',
-                                                                  max_length=self.hparams.max_length)
+                                                                  max_length=self.hparams.max_length,
+								  )
 
         if not self.dataset:
             self.dataset = self.load_datasets()
@@ -151,10 +155,6 @@ class HFDataModule(LightningDataModule):
 
         final_datasets.append(tokenized_dataset)
       
-      for dataset in final_datasets:
-        print("\n")
-        for split in ['train','validation','test']:
-            print(dataset[split].features.keys(),end="\n")
       combined_dataset_dict = datasets.DatasetDict({split: datasets.concatenate_datasets([dataset_dict[split] for dataset_dict in final_datasets])
       for split in final_datasets[0].keys()
       })
