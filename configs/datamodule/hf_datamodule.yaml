@@ -4,7 +4,7 @@ dataset_name: "ncbi_disease,linnaeus" # override in your experiment! should be f
 data_dir: ${data_dir}
 tokenizer_name: ${model.huggingface_model}
 hf_token: "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"
-max_length: 4096  
-batch_size: 2
+max_length: 1024  
+batch_size: 4
 num_workers: 8
 pin_memory: True
