@@ -5,7 +5,7 @@ import torch
 from pytorch_lightning import LightningModule
 from torch import nn
 from torchmetrics import MaxMetric
-from torchmetrics.classification.accuracy import Accuracy
+from torchmetrics import Accuracy,Precision,Recall,F1Score
 from transformers import AdamW, AutoModel, get_linear_schedule_with_warmup
 import torch.nn.functional as F
 
@@ -82,6 +82,16 @@ class Bigbird_multitask(LightningModule):
         self.model = AutoModel.from_pretrained(self.hparams.huggingface_model,
                                                use_auth_token=self.hparams.hf_token)
 
+        self.dise_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size) # disease
+        self.chem_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        self.gene_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        self.spec_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        self.cellline_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        self.dna_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        self.rna_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        # self.protein_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        self.celltype_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+
         self.dise_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # disease
         self.chem_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # chemical
         self.gene_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # gene/protein
@@ -93,6 +103,16 @@ class Bigbird_multitask(LightningModule):
         self.celltype_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # cell type
 
         # Init classifier weights according to initialization rules of model
+        seqs=[self.dise_seq,
+            self.chem_seq,
+            self.gene_seq,
+            self.spec_seq,
+            self.cellline_seq,
+            self.dna_seq,
+            self.rna_seq,
+            # self.protein_seq,
+            self.celltype_seq]
+
         classifiers=[self.dise_classifier,
             self.chem_classifier,
             self.gene_classifier,
@@ -102,6 +122,9 @@ class Bigbird_multitask(LightningModule):
             self.rna_classifier,
             # self.protein_classifier,
             self.celltype_classifier]
+
+        for seq in seqs:
+            self.model._init_weights(seq)
 
         for classifier in classifiers:
             self.model._init_weights(classifier)
@@ -121,8 +144,22 @@ class Bigbird_multitask(LightningModule):
         self.val_acc = Accuracy(task='multiclass',
                                      num_classes=self.hparams.num_labels+1,ignore_index=-100)
         self.test_acc = Accuracy(task='multiclass',
-                                     num_classes=self.hparams.num_labels+1,ignore_index=-100)
+                                     num_classes=2*8+1+1,ignore_index=-100)
+        self.test_ovrl_f1 = F1Score(task='multiclass',average='micro',
+                                        num_classes=2*8+1+1,ignore_index=-100)
+        self.test_ovrl_prec = Precision(task='multiclass',average
+        ='micro',
+                                        num_classes=2*8+1+1,ignore_index=-100)
+        self.test_ovrl_rec = Recall(task='multiclass',average='micro',
+                                        num_classes=2*8+1+1,ignore_index=-100)
 
+        self.test_prec = Precision(task='multiclass',average=None,
+                                        num_classes=2*8+1+1,ignore_index=-100)
+        self.test_rec = Recall(task='multiclass',average=None,
+                                        num_classes=2*8+1+1,ignore_index=-100)
+        self.test_f1 = F1Score(task='multiclass',average=None,
+                                        num_classes=2*8+1+1,ignore_index=-100)   
+                                                     
         # for logging best so far validation accuracy
         self.val_acc_best = MaxMetric()
 
@@ -136,15 +173,25 @@ class Bigbird_multitask(LightningModule):
         outputs = self.model(**filtered_batch, return_dict=True)
         outputs = outputs.last_hidden_state
 
-        dise_logits = self.dise_classifier(outputs) # disease logit value
-        chem_logits = self.chem_classifier(outputs) # chemical logit value
-        gene_logits = self.gene_classifier(outputs) # gene/protein logit value
-        spec_logits = self.spec_classifier(outputs) # species logit value
-        cellline_logits = self.cellline_classifier(outputs) # cell line logit value
-        dna_logits = self.dna_classifier(outputs) # dna logit value
-        rna_logits = self.rna_classifier(outputs) # rna logit value
-        # protein_logits = self.protein_classifier(outputs) # protein logit value
-        celltype_logits = self.celltype_classifier(outputs) # cell type logit value
+        dise_outputs = F.relu(self.dise_seq(outputs)) # disease
+        chem_outputs = F.relu(self.chem_seq(outputs))
+        gene_outputs = F.relu(self.gene_seq(outputs))
+        spec_outputs = F.relu(self.spec_seq(outputs))
+        cellline_outputs = F.relu(self.cellline_seq(outputs))
+        dna_outputs = F.relu(self.dna_seq(outputs))
+        rna_outputs = F.relu(self.rna_seq(outputs))
+        # protein_outputs = F.relu(self.protein_seq(outputs))
+        celltype_outputs = F.relu(self.celltype_seq(outputs))
+
+        dise_logits = self.dise_classifier(dise_outputs) # disease logit value
+        chem_logits = self.chem_classifier(chem_outputs) # chemical logit value
+        gene_logits = self.gene_classifier(gene_outputs) # gene/protein logit value
+        spec_logits = self.spec_classifier(spec_outputs) # species logit value
+        cellline_logits = self.cellline_classifier(cellline_outputs) # cell line logit value
+        dna_logits = self.dna_classifier(dna_outputs) # dna logit value
+        rna_logits = self.rna_classifier(rna_outputs) # rna logit value
+        # protein_logits = self.protein_classifier(protein_outputs) # protein logit value
+        celltype_logits = self.celltype_classifier(celltype_outputs) # cell type logit value
 
         # pooler = outputs.pooler_output
         # pooler = self.dropout(pooler)
@@ -211,19 +258,96 @@ class Bigbird_multitask(LightningModule):
         self.val_acc_best.update(acc)
         self.log("val/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
         self.val_acc.reset()
-
+    
+    def test_labelify(self, pred_label, pred_task):
+        test_labels=torch.zeros(pred_label.shape).to(pred_label.device)
+        for i,(label,task) in enumerate(zip(pred_label,pred_task)): 
+            if label.item()==0 or label.item()==-100:
+                test_labels[i]=label.item()
+            else:
+                test_labels[i]=2*task+label
+        return test_labels
     def test_step(self, batch: Dict[str, torch.tensor], batch_idx: int):
-        loss, preds = self.step(batch)
+        logits = self.forward(batch)
+        
+        labels=batch['labels'].view(-1)
+        tasks=batch['entity_id'].view(-1)-1
+        if batch['entity_id'][0][0]!=0:
+            test_labels=self.test_labelify(labels,tasks)
+        else:
+            test_labels=labels
+        new_logits = []
+        for logit in logits:
+            argmax_predictions = torch.argmax(logit, dim=-1)
+            max_probabilities = torch.max(logit, dim=-1).values
+            new_tensor = torch.stack([argmax_predictions, max_probabilities], dim=-1)
+            new_logits.append(new_tensor)
+        
+        new_logits=torch.stack(new_logits,dim=2)
+        new_logits=new_logits.view(-1,new_logits.shape[2],2)
+        
+        test_pred_label=torch.zeros(test_labels.shape).to(test_labels.device)
+        test_pred_task=torch.zeros(test_labels.shape).to(test_labels.device)
 
-        # log test metrics
-        acc = self.test_acc(preds, batch["labels"].view(-1))
-        self.log("test/loss", loss, on_step=False, on_epoch=True)
-        self.log("test/acc", acc, on_step=False, on_epoch=True)
+        for i,pred in enumerate(new_logits):
+            confidences=pred[:,1]
+            predictions=pred[:,0]
+            if all(predictions[[batch['entity_id'][0][0].item()-1]]==0):
+                test_pred_label[i]=0
+                test_pred_task[i]=-1
+                continue
+            else:
+                indices = torch.nonzero(predictions!= 0)
+                indices_mask=(indices==0) | (indices==1) | (indices==2) | (indices==3) 
+                indices=indices[indices_mask]
+                predicted_task = indices[torch.argmax(confidences[indices])]
+
+                test_pred_label[i]=predictions[predicted_task]
+                test_pred_task[i]=predicted_task
+
+        test_pred=self.test_labelify(test_pred_label,test_pred_task)
+        
+        self.test_prec.update(test_pred, test_labels)
+        self.test_rec.update(test_pred, test_labels)
+        self.test_f1.update(test_pred, test_labels)
+        
+        self.test_acc.update(test_pred, test_labels)
+        self.test_ovrl_prec.update(test_pred, test_labels)
+        self.test_ovrl_rec.update(test_pred, test_labels)
+        self.test_ovrl_f1.update(test_pred, test_labels)
+
+        loss, preds = self.step(batch)
 
         return {"loss": loss, "preds": preds, "targets": batch["labels"]}
 
     def on_test_epoch_end(self):
+        acc=self.test_acc.compute()
+        prec=self.test_prec.compute()
+        rec=self.test_rec.compute()
+        f1=self.test_f1.compute()
+
+        ovrl_prec=self.test_ovrl_prec.compute()
+        ovrl_rec=self.test_ovrl_rec.compute()
+        ovrl_f1=self.test_ovrl_f1.compute()
+
+        self.log("test/acc", acc, on_epoch=True, prog_bar=True)
+        self.log("test/ovrl_prec", ovrl_prec, on_epoch=True, prog_bar=True)
+        self.log("test/ovrl_rec", ovrl_rec, on_epoch=True, prog_bar=True)
+        self.log("test/ovrl_f1", ovrl_f1, on_epoch=True, prog_bar=True)
+
+        for i, (p, r, f) in enumerate(zip(prec, rec, f1)):
+            self.log(f'precision_class_{i}', p, on_step=False, on_epoch=True)
+            self.log(f'recall_class_{i}', r, on_step=False, on_epoch=True)
+            self.log(f'f1_class_{i}', f, on_step=False, on_epoch=True)
+        
+        
+        self.test_ovrl_f1.reset()
+        self.test_ovrl_prec.reset()
+        self.test_ovrl_rec.reset()
         self.test_acc.reset()
+        self.test_prec.reset()
+        self.test_rec.reset()
+        self.test_f1.reset()
 
     """@property"""
     def total_training_steps(self) -> int:

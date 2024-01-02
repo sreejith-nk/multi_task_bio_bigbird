@@ -9,7 +9,7 @@ from pytorch_lightning import (
     Trainer,
     seed_everything,
 )
-from pytorch_lightning.loggers import LightningLoggerBase
+from pytorch_lightning.loggers import Logger
 from hydra.utils import get_class
 from torch._C import Argument
 from src.utils import utils
