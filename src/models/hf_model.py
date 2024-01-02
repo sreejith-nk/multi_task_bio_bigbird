@@ -22,6 +22,7 @@ def match_indexes(entity_id):
     dna_idx = []
     rna_idx = []
     celltype_idx = []
+    protein_idx = []
 
     for i, example in enumerate(entity_id):
         if example[0] == 1:
@@ -40,10 +41,12 @@ def match_indexes(entity_id):
             rna_idx.append(i)
         elif example[0] == 8:
             celltype_idx.append(i)
+        elif example[0] == 9:
+            protein_idx.append(i)
         else:
             # Handle other cases if needed
             pass
-    return dise_idx, chem_idx, gene_idx, spec_idx, cellline_idx, dna_idx, rna_idx, celltype_idx
+    return dise_idx, chem_idx, gene_idx, spec_idx, cellline_idx, dna_idx, rna_idx, celltype_idx, protein_idx
 
 
 class Bigbird_multitask(LightningModule):
@@ -89,8 +92,8 @@ class Bigbird_multitask(LightningModule):
         self.cellline_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
         self.dna_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
         self.rna_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
-        # self.protein_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
         self.celltype_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
+        self.protein_seq = nn.Linear(self.model.config.hidden_size, self.model.config.hidden_size)
 
         self.dise_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # disease
         self.chem_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # chemical
@@ -99,8 +102,8 @@ class Bigbird_multitask(LightningModule):
         self.cellline_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # cell line
         self.dna_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # dna
         self.rna_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # rna
-        # self.protein_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # protein
         self.celltype_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # cell type
+        self.protein_classifier = nn.Linear(self.model.config.hidden_size, self.hparams.num_labels) # protein
 
         # Init classifier weights according to initialization rules of model
         seqs=[self.dise_seq,
@@ -110,8 +113,8 @@ class Bigbird_multitask(LightningModule):
             self.cellline_seq,
             self.dna_seq,
             self.rna_seq,
-            # self.protein_seq,
-            self.celltype_seq]
+            self.celltype_seq,
+            self.protein_seq]
 
         classifiers=[self.dise_classifier,
             self.chem_classifier,
@@ -120,8 +123,8 @@ class Bigbird_multitask(LightningModule):
             self.cellline_classifier,
             self.dna_classifier,
             self.rna_classifier,
-            # self.protein_classifier,
-            self.celltype_classifier]
+            self.celltype_classifier,
+            self.protein_classifier,]
 
         for seq in seqs:
             self.model._init_weights(seq)
@@ -144,21 +147,21 @@ class Bigbird_multitask(LightningModule):
         self.val_acc = Accuracy(task='multiclass',
                                      num_classes=self.hparams.num_labels+1,ignore_index=-100)
         self.test_acc = Accuracy(task='multiclass',
-                                     num_classes=2*8+1+1,ignore_index=-100)
+                                     num_classes=2*9+1+1,ignore_index=-100)
         self.test_ovrl_f1 = F1Score(task='multiclass',average='micro',
-                                        num_classes=2*8+1+1,ignore_index=-100)
+                                        num_classes=2*9+1+1,ignore_index=-100)
         self.test_ovrl_prec = Precision(task='multiclass',average
         ='micro',
-                                        num_classes=2*8+1+1,ignore_index=-100)
+                                        num_classes=2*9+1+1,ignore_index=-100)
         self.test_ovrl_rec = Recall(task='multiclass',average='micro',
-                                        num_classes=2*8+1+1,ignore_index=-100)
+                                        num_classes=2*9+1+1,ignore_index=-100)
 
         self.test_prec = Precision(task='multiclass',average=None,
-                                        num_classes=2*8+1+1,ignore_index=-100)
+                                        num_classes=2*9+1+1,ignore_index=-100)
         self.test_rec = Recall(task='multiclass',average=None,
-                                        num_classes=2*8+1+1,ignore_index=-100)
+                                        num_classes=2*9+1+1,ignore_index=-100)
         self.test_f1 = F1Score(task='multiclass',average=None,
-                                        num_classes=2*8+1+1,ignore_index=-100)   
+                                        num_classes=2*9+1+1,ignore_index=-100)   
                                                      
         # for logging best so far validation accuracy
         self.val_acc_best = MaxMetric()
@@ -180,8 +183,8 @@ class Bigbird_multitask(LightningModule):
         cellline_outputs = F.relu(self.cellline_seq(outputs))
         dna_outputs = F.relu(self.dna_seq(outputs))
         rna_outputs = F.relu(self.rna_seq(outputs))
-        # protein_outputs = F.relu(self.protein_seq(outputs))
         celltype_outputs = F.relu(self.celltype_seq(outputs))
+        protein_outputs = F.relu(self.protein_seq(outputs))
 
         dise_logits = self.dise_classifier(dise_outputs) # disease logit value
         chem_logits = self.chem_classifier(chem_outputs) # chemical logit value
@@ -190,13 +193,13 @@ class Bigbird_multitask(LightningModule):
         cellline_logits = self.cellline_classifier(cellline_outputs) # cell line logit value
         dna_logits = self.dna_classifier(dna_outputs) # dna logit value
         rna_logits = self.rna_classifier(rna_outputs) # rna logit value
-        # protein_logits = self.protein_classifier(protein_outputs) # protein logit value
         celltype_logits = self.celltype_classifier(celltype_outputs) # cell type logit value
+        protein_logits = self.protein_classifier(protein_outputs) # protein logit value
 
         # pooler = outputs.pooler_output
         # pooler = self.dropout(pooler)
         # logits = self.classifier(pooler)
-        return dise_logits, chem_logits, gene_logits, spec_logits, cellline_logits, dna_logits, rna_logits, celltype_logits
+        return dise_logits, chem_logits, gene_logits, spec_logits, cellline_logits, dna_logits, rna_logits, celltype_logits, protein_logits
 
     def step(self, batch: Dict[str, torch.tensor]):
         logits = self(batch)

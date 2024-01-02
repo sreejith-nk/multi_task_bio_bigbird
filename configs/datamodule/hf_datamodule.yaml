@@ -1,10 +1,10 @@
 _target_: src.datamodules.hf_datamodule.HFDataModule
 
-dataset_name: "linnaeus" #"ncbi_disease,linnaeus,bc4chemd_ner,bc2gm_corpus" # override in your experiment! should be foldername inside data/
+dataset_name: "BC5CDR-chemical,BC5CDR-disease,linnaeus,species_800,ncbi_disease,bc4chemd_ner,bc2gm_corpus,JNLPBA-cl,JNLPBA-ct,JNLPBA-dna,JNLPBA-rna,JNLPBA-protein" # override in your experiment! should be foldername inside data/
 data_dir: ${data_dir}
 tokenizer_name: ${model.huggingface_model}
 hf_token: "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"
-max_length: 1024 
+max_length: 4096 
 batch_size: 1
 num_workers: 8
 pin_memory: True

@@ -18,9 +18,9 @@ def get_entity_id(data_name):
         entity_id = 1
     elif data_name in ["BC5CDR-chem",  "cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner","bc4chemd_ner"]:
         entity_id = 2
-    elif data_name in ["BC2GM", "JNLPBA-protein", "bc2gm","bc2gm_corpus","mirna-gp", "cell_finder-gp", "chebi-gp", "loctext-gp", "deca", "fsu", "gpro", "jnlpba-gp", "bio_infer-gp", "variome-gp", "osiris-gp",  "iepa"]:
+    elif data_name in ["BC2GM","bc2gm","bc2gm_corpus","mirna-gp", "cell_finder-gp", "chebi-gp", "loctext-gp", "deca", "fsu", "gpro", "jnlpba-gp", "bio_infer-gp", "variome-gp", "osiris-gp",  "iepa"]:
         entity_id = 3
-    elif data_name in ["s800", "linnaeus", "loctext-sp", "mirna-sp", "chebi-sp", "cell_finder-sp", "variome-sp"]:
+    elif data_name in ["s800", "linnaeus", "loctext-sp", "mirna-sp", "chebi-sp", "cell_finder-sp", "variome-sp","species_800"]:
         entity_id = 4
     elif data_name in ["JNLPBA-cl", "cell_finder-cl", "jnlpba-cl", "gellus", "cll"]:
         entity_id = 5
@@ -30,6 +30,8 @@ def get_entity_id(data_name):
         entity_id = 7
     elif data_name in ["JNLPBA-ct","jnlpba-ct"]:
         entity_id = 8
+    elif data_name in ["JNLPBA-protein"]:
+        entity_id = 9
     else:
         entity_id = 0
     return entity_id
