@@ -1,7 +1,7 @@
 _target_: src.models.hf_model.Bigbird_multitask
 
 num_labels: 3 # Override me in your experiment config!
-huggingface_model: "bisectgroup/biobigbird-base-stage1"
+huggingface_model: "bisectgroup/biobigbird-base-stage2"
 hf_token: "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"
 learning_rate: 3e-5
 batch_size: ${datamodule.batch_size}

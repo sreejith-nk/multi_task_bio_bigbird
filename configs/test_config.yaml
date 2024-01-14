@@ -48,4 +48,5 @@ version: ${now:%Y-%m-%d_%H-%M-%S}
 
 eval_subset: test
 
-checkpoint: /media/riseadmin/data2/ch19b090/DDP/my_code/multi_task_bio_bigbird/logs/runs/2023-12-26/18-36-48/checkpoints/epoch_002.ckpt
+# checkpoint: /media/riseadmin/data2/ch19b090/DDP/my_code/multi_task_bio_bigbird/logs/runs/2023-12-26/18-36-48/checkpoints/epoch_002.ckpt
+checkpoint: /media/riseadmin/data2/ch19b090/DDP/my_code/multi_task_bio_bigbird/logs/runs/2024-01-10/12-35-16/checkpoints/last.ckpt

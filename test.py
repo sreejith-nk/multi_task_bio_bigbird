@@ -27,8 +27,12 @@ def main(config: DictConfig):
         utils.print_config(config, resolve=True)
 
     # Train model
-    return test(config)
-
+    data=config.datamodule.dataset_name.split(",")
+    for ds in data:
+        config.datamodule.dataset_name=ds
+        print(ds)
+        print(test(config))
+        print("\n\n\n")
 
 if __name__ == "__main__":
     main()

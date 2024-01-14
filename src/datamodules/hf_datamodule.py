@@ -12,11 +12,10 @@ from torchvision.transforms import transforms
 from transformers.models.auto.tokenization_auto import AutoTokenizer
 from transformers import DataCollatorForTokenClassification
 
-
 def get_entity_id(data_name):
     if data_name in ["NCBI-disease", "BC5CDR-disease", "mirna-di", "ncbi_disease", "scai_disease", "variome-di"]:
         entity_id = 1
-    elif data_name in ["BC5CDR-chem",  "cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner","bc4chemd_ner"]:
+    elif data_name in ["BC5CDR-chemical",  "cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner","bc4chemd_ner"]:
         entity_id = 2
     elif data_name in ["BC2GM","bc2gm","bc2gm_corpus","mirna-gp", "cell_finder-gp", "chebi-gp", "loctext-gp", "deca", "fsu", "gpro", "jnlpba-gp", "bio_infer-gp", "variome-gp", "osiris-gp",  "iepa"]:
         entity_id = 3
@@ -32,10 +31,21 @@ def get_entity_id(data_name):
         entity_id = 8
     elif data_name in ["JNLPBA-protein"]:
         entity_id = 9
+    elif data_name in ["chem_prot"]:
+        entity_id = -1
+    elif data_name in ["ddi"]:
+        entity_id = -2
+    elif data_name in ["gad"]:
+        entity_id = -3
     else:
-        entity_id = 0
+        entity_id=0
     return entity_id
 
+def problem_name(name):
+  if name in ["gad","ddi","chem_prot"]:
+    return "re"
+  else:
+    return "ner"
 
 class HFDataModule(LightningDataModule):
     """
@@ -141,28 +151,52 @@ class HFDataModule(LightningDataModule):
       data_names=self.hparams.dataset_name.split(',')
       final_datasets=[]
       for name in data_names:
-        dataset=datasets.load_from_disk(os.path.join(self.hparams.data_dir,name))
-        tokenized_dataset=dataset.map(self.tokenize_and_align_labels,
-                                    batched=True,
-                                    remove_columns=dataset["train"].column_names
-                                    )
-        #adding entity
-        entity_id=get_entity_id(name)
+        if problem_name(name)=="ner":
+          dataset=datasets.load_from_disk(os.path.join(self.hparams.data_dir,name))
+          tokenized_dataset=dataset.map(self.tokenize_and_align_labels,
+                                      batched=True,
+                                      remove_columns=dataset["train"].column_names
+                                      )
+          #adding entity
+          entity_id=get_entity_id(name)
 
-        # Add the new column to each split (train, validation, test)
-        
-        for split in tokenized_dataset.keys():
-            entity_values = [[entity_id]*self.hparams.max_length for _ in range(len(tokenized_dataset[split]))]
-            tokenized_dataset[split] = tokenized_dataset[split].add_column('entity_id', entity_values)
+          # Add the new column to each split (train, validation, test)
 
-        final_datasets.append(tokenized_dataset)
-      
+          for split in tokenized_dataset.keys():
+              entity_values = [[entity_id]*self.hparams.max_length for _ in range(len(tokenized_dataset[split]))]
+              tokenized_dataset[split] = tokenized_dataset[split].add_column('entity_id', entity_values)
+          final_datasets.append(tokenized_dataset)
+          
+          tokenized_dataset.cleanup_cache_files()
+          dataset.cleanup_cache_files()
+        else:
+          dataset=datasets.load_from_disk(os.path.join(self.hparams.data_dir,name))
+          tokenized_dataset=dataset.map(self.preprocess_function,
+                                      batched=False,
+                                      remove_columns=dataset["train"].column_names,
+                                      )
+
+          entity_id=get_entity_id(name)
+          for split in tokenized_dataset.keys():
+              entity_values = [[entity_id]*self.hparams.max_length for _ in range(len(tokenized_dataset[split]))]
+              tokenized_dataset[split] = tokenized_dataset[split].add_column('entity_id', entity_values)
+
+          final_datasets.append(tokenized_dataset)
+          
+          tokenized_dataset.cleanup_cache_files()
+          dataset.cleanup_cache_files()
+
       combined_dataset_dict = datasets.DatasetDict({split: datasets.concatenate_datasets([dataset_dict[split] for dataset_dict in final_datasets])
       for split in final_datasets[0].keys()
       })
 
       return combined_dataset_dict
 
+    def preprocess_function(self,examples):
+      new = self.tokenizer(examples["text"], truncation=True,max_length=self.hparams.max_length, padding="max_length")
+      label=examples['label']
+      new['labels']=[label for _ in range(len(new['input_ids']))]
+      return new
 
     def align_labels_with_tokens(self,labels, word_ids):
         new_labels = []
@@ -188,7 +222,7 @@ class HFDataModule(LightningDataModule):
 
     def tokenize_and_align_labels(self,examples):
         tokenized_inputs = self.tokenizer(
-            examples["tokens"], truncation=True, is_split_into_words=True
+            examples["tokens"], truncation=True, is_split_into_words=True, max_length=self.hparams.max_length, padding="max_length"
         )
         all_labels = examples["ner_tags"]
         new_labels = []
@@ -230,4 +264,3 @@ class HFDataModule(LightningDataModule):
             collate_fn=self.collator_fn,
             shuffle=False,
         )
-
