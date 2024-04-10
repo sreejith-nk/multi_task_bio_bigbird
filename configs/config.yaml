@@ -45,7 +45,7 @@ seed: 0
 
 # name of the run is accessed by loggers
 # should be used along with experiment mode
-name: s2
+name: s3
 
 # version name is datetime
 version: ${now:%Y-%m-%d_%H-%M-%S}

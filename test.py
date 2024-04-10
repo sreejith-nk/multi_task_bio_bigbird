@@ -30,9 +30,7 @@ def main(config: DictConfig):
     data=config.datamodule.dataset_name.split(",")
     for ds in data:
         config.datamodule.dataset_name=ds
-        print(ds)
-        print(test(config))
-        print("\n\n\n")
+        test(config)
 
 if __name__ == "__main__":
     main()

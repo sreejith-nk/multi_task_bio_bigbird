@@ -33,6 +33,7 @@ def test(config: DictConfig) -> Optional[float]:
         seed_everything(config.seed, workers=True)
 
     # Init lightning datamodule
+    log.info("dataset_name: "+config.datamodule.dataset_name)    
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
 
     datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule)

@@ -13,15 +13,15 @@ from transformers.models.auto.tokenization_auto import AutoTokenizer
 from transformers import DataCollatorForTokenClassification
 
 def get_entity_id(data_name):
-    if data_name in ["NCBI-disease", "BC5CDR-disease", "mirna-di", "ncbi_disease", "scai_disease", "variome-di"]:
+    if data_name in ["mirna-disease","biored-disease","NCBI-disease", "BC5CDR-disease", "mirna-di", "ncbi_disease", "scai_disease", "variome-di"]:
         entity_id = 1
-    elif data_name in ["BC5CDR-chemical",  "cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner","bc4chemd_ner"]:
+    elif data_name in ["biored-chemical","BC5CDR-chemical","cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner","bc4chemd_ner"]:
         entity_id = 2
-    elif data_name in ["BC2GM","bc2gm","bc2gm_corpus","mirna-gp", "cell_finder-gp", "chebi-gp", "loctext-gp", "deca", "fsu", "gpro", "jnlpba-gp", "bio_infer-gp", "variome-gp", "osiris-gp",  "iepa"]:
+    elif data_name in ["biored-gene","genetag","BC2GM","bc2gm","bc2gm_corpus","mirna-gp", "cell_finder-gp", "chebi-gp", "loctext-gp", "deca", "fsu", "progene", "jnlpba-gp", "bio_infer-gp", "variome-gp", "osiris-gp",  "iepa"]:
         entity_id = 3
-    elif data_name in ["s800", "linnaeus", "loctext-sp", "mirna-sp", "chebi-sp", "cell_finder-sp", "variome-sp","species_800"]:
+    elif data_name in ["mirna-species","s800", "linnaeus", "loctext-sp", "mirna-sp", "chebi-sp", "cell_finder-sp", "variome-sp","species_800"]:
         entity_id = 4
-    elif data_name in ["JNLPBA-cl", "cell_finder-cl", "jnlpba-cl", "gellus", "cll"]:
+    elif data_name in ["JNLPBA-cl", "cell_finder-cl", "jnlpba-cl", "gellus", "cll","biored-cl"]:
         entity_id = 5
     elif data_name in ["JNLPBA-dna", "jnlpba-dna"]:
         entity_id = 6
@@ -29,8 +29,10 @@ def get_entity_id(data_name):
         entity_id = 7
     elif data_name in ["JNLPBA-ct","jnlpba-ct"]:
         entity_id = 8
-    elif data_name in ["JNLPBA-protein"]:
+    elif data_name in ["mirna-protein","JNLPBA-protein"]:
         entity_id = 9
+    elif data_name in ["ddi_ner"]:
+        entity_id = 10
     elif data_name in ["chem_prot"]:
         entity_id = -1
     elif data_name in ["ddi"]:
