@@ -1,0 +1,13 @@
+{
+    "linnaeus": [
+        "ncbi_disease",
+        "BC5CDR-chemical",
+        "bc2gm_corpus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-protein",
+        "ddi",
+        "species_800"
+    ]
+}

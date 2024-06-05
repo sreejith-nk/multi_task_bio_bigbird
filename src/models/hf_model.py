@@ -59,7 +59,7 @@ def match_indexes(entity_id):
         else:
             # Handle other cases if needed
             pass
-    return dise_idx, chem_idx, gene_idx, spec_idx, cellline_idx, dna_idx, rna_idx, celltype_idx, protein_idx, chemprot_idx, ddi_idx, gad_idx
+    return dise_idx, chem_idx, gene_idx, spec_idx, cellline_idx, dna_idx, rna_idx, celltype_idx, protein_idx, drug_idx,chemprot_idx, ddi_idx, gad_idx
 
 
 class Bigbird_multitask(LightningModule):
@@ -190,7 +190,7 @@ class Bigbird_multitask(LightningModule):
                                         num_classes=2*10+1+1,ignore_index=-100)
         self.ner_test_rec = Recall(task='multiclass',average=None,
                                         num_classes=2*10+1+1,ignore_index=-100)
-        self.ner_test_f1 = F1Score(task='multiclass',average=None,
+        self.ner_test_f1 = F1Score(task='multiclass',average="macro",
                                         num_classes=2*10+1+1,ignore_index=-100)
 
         self.re_test_acc = Accuracy(task='multiclass',
@@ -433,25 +433,43 @@ class Bigbird_multitask(LightningModule):
         re_rec=self.re_test_rec.compute()
         re_f1=self.re_test_f1.compute()
 
-        self.log("ner_test/acc", ner_acc, on_epoch=True, prog_bar=True)
-        
-        for i, (p, r, f) in enumerate(zip(ner_prec, ner_rec, ner_f1)):
-            if p!=0:
-                self.log(f'ner_precision_class_{i}', p, on_step=False, on_epoch=True)
-            if r!=0:    
-                self.log(f'ner_recall_class_{i}', r, on_step=False, on_epoch=True)
-            if f!=0:    
-                self.log(f'ner_f1_class_{i}', f, on_step=False, on_epoch=True)
-        
-        self.log("re_test/acc", re_acc, on_epoch=True, prog_bar=True)
+        # self.log("ner_test/acc", ner_acc, on_epoch=True, prog_bar=True)
 
-        for i, (p, r, f) in enumerate(zip(re_prec, re_rec, re_f1)):
-            if p!=0:
-                self.log(f're_precision_class_{i}', p, on_step=False, on_epoch=True)
-            if r!=0:
-                self.log(f're_recall_class_{i}', r, on_step=False, on_epoch=True)
-            if f!=0:
-                self.log(f're_f1_class_{i}', f, on_step=False, on_epoch=True)
+        if ner_f1!=0:
+            self.log("test_metric", ner_f1, on_epoch=True, prog_bar=True)
+
+        if re_acc!=0:
+            self.log("test_metric", re_acc, on_epoch=True, prog_bar=True)
+
+        # ner_acc=self.ner_test_acc.compute()
+        # ner_prec=self.ner_test_prec.compute()
+        # ner_rec=self.ner_test_rec.compute()
+        # ner_f1=self.ner_test_f1.compute()
+
+        # re_acc=self.re_test_acc.compute()
+        # re_prec=self.re_test_prec.compute()
+        # re_rec=self.re_test_rec.compute()
+        # re_f1=self.re_test_f1.compute()
+
+        # self.log("ner_test/acc", ner_acc, on_epoch=True, prog_bar=True)
+        
+        # for i, (p, r, f) in enumerate(zip(ner_prec, ner_rec, ner_f1)):
+        #     if p!=0:
+        #         self.log(f'ner_precision_class_{i}', p, on_step=False, on_epoch=True)
+        #     if r!=0:    
+        #         self.log(f'ner_recall_class_{i}', r, on_step=False, on_epoch=True)
+        #     if f!=0:    
+        #         self.log(f'ner_f1_class_{i}', f, on_step=False, on_epoch=True)
+        
+        # self.log("re_test/acc", re_acc, on_epoch=True, prog_bar=True)
+
+        # for i, (p, r, f) in enumerate(zip(re_prec, re_rec, re_f1)):
+        #     if p!=0:
+        #         self.log(f're_precision_class_{i}', p, on_step=False, on_epoch=True)
+        #     if r!=0:
+        #         self.log(f're_recall_class_{i}', r, on_step=False, on_epoch=True)
+        #     if f!=0:
+        #         self.log(f're_f1_class_{i}', f, on_step=False, on_epoch=True)
 
         self.ner_test_acc.reset()
         self.ner_test_prec.reset()

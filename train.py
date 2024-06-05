@@ -27,7 +27,9 @@ def main(config: DictConfig):
         utils.print_config(config, resolve=True)
 
     # Train model
-    return train(config)
+    metrics = train(config)
+    print(metrics)
+    return metrics
 
 
 if __name__ == "__main__":

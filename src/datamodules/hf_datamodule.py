@@ -15,7 +15,7 @@ from transformers import DataCollatorForTokenClassification
 def get_entity_id(data_name):
     if data_name in ["mirna-disease","biored-disease","NCBI-disease", "BC5CDR-disease", "mirna-di", "ncbi_disease", "scai_disease", "variome-di"]:
         entity_id = 1
-    elif data_name in ["biored-chemical","BC5CDR-chemical","cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner","bc4chemd_ner"]:
+    elif data_name in ["iepa-chemical","biored-chemical","BC5CDR-chemical","cdr-ch", "chemdner", "scai_chemicals", "chebi-ch", "BC4CHEMD","drAbreu/bc4chemd_ner","bc4chemd_ner"]:
         entity_id = 2
     elif data_name in ["biored-gene","genetag","BC2GM","bc2gm","bc2gm_corpus","mirna-gp", "cell_finder-gp", "chebi-gp", "loctext-gp", "deca", "fsu", "progene", "jnlpba-gp", "bio_infer-gp", "variome-gp", "osiris-gp",  "iepa"]:
         entity_id = 3
@@ -29,7 +29,7 @@ def get_entity_id(data_name):
         entity_id = 7
     elif data_name in ["JNLPBA-ct","jnlpba-ct"]:
         entity_id = 8
-    elif data_name in ["mirna-protein","JNLPBA-protein"]:
+    elif data_name in ["mirna-protein","JNLPBA-protein","bioinfer-protein"]:
         entity_id = 9
     elif data_name in ["ddi_ner"]:
         entity_id = 10

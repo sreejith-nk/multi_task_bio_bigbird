@@ -48,7 +48,7 @@ def train(config: DictConfig) -> Optional[float]:
                 callbacks.append(hydra.utils.instantiate(cb_conf))
 
     # Init lightning loggers
-    logger: List[LightningLoggerBase] = []
+    logger: List[Logger] = []
     if "logger" in config:
         for _, lg_conf in config.logger.items():
             if "_target_" in lg_conf:
@@ -82,7 +82,15 @@ def train(config: DictConfig) -> Optional[float]:
     # Test the model
     if config.get("test_after_training") and not config.trainer.get("fast_dev_run"):
         log.info("Starting testing!")
-        trainer.test(model=model, datamodule=datamodule)
+        datas = config.datamodule.dataset_name.split(",")
+        metrics ={}
+        for ds in datas:
+            config.datamodule.dataset_name = ds
+            metrics[ds] = 0
+            new_dm = hydra.utils.instantiate(config.datamodule)
+            trainer.test(model=model, datamodule=new_dm)
+            metrics[ds] = trainer.callback_metrics.get("test_metric").item()
+
 
     # Make sure everything closed properly
     log.info("Finalizing!")
@@ -102,4 +110,4 @@ def train(config: DictConfig) -> Optional[float]:
     log.info("Done!")
 
     # Return metric score for hyperparameter optimization
-    return score
+    return metrics

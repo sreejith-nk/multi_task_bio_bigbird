@@ -1,0 +1,127 @@
+{
+    "ncbi_disease": [
+        "BC5CDR-chemical",
+        "bc2gm_corpus",
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "JNLPBA-protein",
+        "chem_prot",
+        "ddi"
+    ],
+    "BC5CDR-chemical": [
+        "bc2gm_corpus",
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "chem_prot",
+        "ddi",
+        "gad"
+    ],
+    "bc2gm_corpus": [
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "JNLPBA-protein"
+    ],
+    "linnaeus": [
+        "ncbi_disease",
+        "BC5CDR-chemical",
+        "bc2gm_corpus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-protein",
+        "ddi"
+    ],
+    "JNLPBA-cl": [
+        "BC5CDR-chemical",
+        "bc2gm_corpus",
+        "JNLPBA-ct",
+        "JNLPBA-rna",
+        "JNLPBA-protein",
+        "ddi_ner"
+    ],
+    "JNLPBA-dna": [
+        "BC5CDR-chemical",
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-rna",
+        "JNLPBA-protein",
+        "ddi"
+    ],
+    "JNLPBA-rna": [
+        "BC5CDR-chemical",
+        "bc2gm_corpus",
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-protein"
+    ],
+    "JNLPBA-ct": [
+        "ncbi_disease",
+        "BC5CDR-chemical",
+        "bc2gm_corpus",
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "JNLPBA-protein",
+        "ddi_ner",
+        "chem_prot"
+    ],
+    "JNLPBA-protein": [
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "gad"
+    ],
+    "ddi_ner": [
+        "ncbi_disease",
+        "BC5CDR-chemical",
+        "bc2gm_corpus",
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "JNLPBA-protein",
+        "chem_prot",
+        "ddi",
+        "gad"
+    ],
+    "chem_prot": [
+        "ncbi_disease",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "ddi_ner",
+        "ddi"
+    ],
+    "ddi": [
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "JNLPBA-protein"
+    ],
+    "gad": [
+        "bc2gm_corpus",
+        "linnaeus",
+        "JNLPBA-cl",
+        "JNLPBA-ct",
+        "JNLPBA-dna",
+        "JNLPBA-rna",
+        "chem_prot",
+        "ddi"
+    ]
+}
